@@ -74,6 +74,7 @@ export function salaryText(job) {
   if (job.salary_unit === '分成%') return `${job.salary_min || 0}% - ${job.salary_max || 0}% 分成`;
   const unit = job.salary_unit || '元/月';
   if (!job.salary_min || job.salary_min === job.salary_max) return `${job.salary_max || job.salary_min} ${unit}`;
+  if (!job.salary_max) return `${job.salary_min} ${unit}起`;
   return `${job.salary_min} - ${job.salary_max} ${unit}`;
 }
 
