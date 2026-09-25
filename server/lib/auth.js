@@ -53,10 +53,55 @@ function userFromToken(tk) {
   return rest;
 }
 
+/** Cookie 名：线上走反向代理时 Authorization / 自定义头可能被剥离，Cookie 是最稳的兜底通道 */
+const COOKIE_NAME = 'vc_token';
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+
+function parseCookies(header) {
+  const out = {};
+  if (!header) return out;
+  String(header).split(';').forEach((part) => {
+    const idx = part.indexOf('=');
+    if (idx < 0) return;
+    const key = part.slice(0, idx).trim();
+    if (key) out[key] = decodeURIComponent(part.slice(idx + 1).trim());
+  });
+  return out;
+}
+
+/**
+ * 取值优先级：Cookie → x-token → Authorization。
+ * 原因：部署平台的反向代理会给每个请求注入自己的 JWT 到 Authorization 头（覆盖业务 token），
+ * 导致 Bearer 通道在托管环境下不可用；Cookie 与自定义头不受影响。
+ */
+function isInjectedJWT(value) {
+  return /^eyJ[A-Za-z0-9_-]+\./.test(value);
+}
+
 function readToken(req) {
+  const fromCookie = parseCookies(req.headers.cookie)[COOKIE_NAME];
+  if (fromCookie) return fromCookie;
+  const fromHeader = req.headers['x-token'];
+  if (fromHeader) return String(fromHeader);
   const auth = req.headers.authorization || '';
-  if (auth.startsWith('Bearer ')) return auth.slice(7);
-  return req.headers['x-token'] || '';
+  if (auth.startsWith('Bearer ')) {
+    const value = auth.slice(7);
+    if (value && !isInjectedJWT(value)) return value;
+  }
+  return '';
+}
+
+/** 登录/注册成功后写入会话 Cookie（HttpOnly，前端无需感知） */
+function setTokenCookie(res, tk) {
+  const value = `${COOKIE_NAME}=${encodeURIComponent(tk)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; HttpOnly; SameSite=Lax`;
+  const prev = res.getHeader('Set-Cookie');
+  res.setHeader('Set-Cookie', prev ? [].concat(prev, value) : value);
+}
+
+function clearTokenCookie(res) {
+  const value = `${COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`;
+  const prev = res.getHeader('Set-Cookie');
+  res.setHeader('Set-Cookie', prev ? [].concat(prev, value) : value);
 }
 
 /** 解析当前登录用户（可为空），挂载到 req.user */
@@ -87,5 +132,6 @@ function requireAdmin(req, _res, next) {
 
 module.exports = {
   hashPassword, verifyPassword, createSession, destroySession, userFromToken, readToken,
+  setTokenCookie, clearTokenCookie,
   attachUser, requireAuth, requireStaff, requireAdmin
 };

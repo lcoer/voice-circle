@@ -16,10 +16,15 @@ export const store = {
 
 async function request(method, path, body) {
   const headers = { 'Content-Type': 'application/json' };
-  if (store.token) headers.Authorization = `Bearer ${store.token}`;
+  // 同时走 x-token 头与 Cookie：托管环境的反向代理会覆盖 Authorization 头，x-token 不会被覆盖
+  if (store.token) {
+    headers['x-token'] = store.token;
+    headers.Authorization = `Bearer ${store.token}`;
+  }
   const res = await fetch(`/api${path}`, {
     method,
     headers,
+    credentials: 'include',
     body: body === undefined ? undefined : JSON.stringify(body)
   });
   let json;

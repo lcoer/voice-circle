@@ -141,6 +141,12 @@ npm run push -- --dry        # 只预览改动，不提交不推送
 - 前端所有请求走相对路径 `/api`，换域名无需改动任何代码。
 - 依赖只有 express，**没有** MySQL / Redis 等外部服务，符合部署平台的前置检查。
 
+### 登录态走 Cookie（重要）
+
+托管平台的反向代理会**为每个请求注入并覆盖 `Authorization` 头**，业务 token 若只走该头会失效（表现为「登录成功但一操作就提示未登录」）。
+
+因此会话 token 同时通过三种通道传递，服务端按优先级读取：**Cookie `vc_token` → `x-token` 头 → `Authorization` 头**（且会忽略形如 `eyJ…` 的注入 JWT）。前端 `fetch` 已带 `credentials: 'include'`，浏览器自动携带 Cookie，无需额外配置。
+
 ### 数据存在哪
 
 默认使用项目内的 SQLite（`data/voice-circle.db`），运行在云端沙箱里。

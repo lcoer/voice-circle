@@ -8,7 +8,10 @@ const express = require('express');
 const { get, all, run } = require('../data/db');
 const util = require('../lib/util');
 const publicUser = require('./helpers').publicUser;
-const { hashPassword, verifyPassword, createSession, destroySession, requireAuth, readToken } = require('../lib/auth');
+const {
+  hashPassword, verifyPassword, createSession, destroySession, requireAuth, readToken,
+  setTokenCookie, clearTokenCookie
+} = require('../lib/auth');
 const { ok, wrap, AppError, notFound } = require('../lib/http');
 
 const router = express.Router();
@@ -58,6 +61,7 @@ router.post('/register', wrap(async (req, res) => {
   const safeRole = ['user', 'recruiter'].includes(role) ? role : 'user';
   const id = repo.create({ username, nick: nick || username, password, role: safeRole });
   const session = createSession(id);
+  setTokenCookie(res, session.token);
   ok(res, { token: session.token, user: publicUser(repo.byId(id)) }, '注册成功');
 }));
 
@@ -68,11 +72,13 @@ router.post('/login', wrap(async (req, res) => {
   if (!verifyPassword(password, user.password_salt, user.password_hash)) throw new AppError('用户名或密码错误');
   if (user.status === 'banned') throw new AppError('账号已被封禁', 403);
   const session = createSession(user.id);
+  setTokenCookie(res, session.token);
   ok(res, { token: session.token, user: publicUser(user) }, '登录成功');
 }));
 
 router.post('/logout', requireAuth, wrap(async (req, res) => {
   destroySession(readToken(req));
+  clearTokenCookie(res);
   ok(res, null, '已退出');
 }));
 
