@@ -4,6 +4,7 @@ import { api, store, router, setActiveNav, icon, esc, toast, modal, buildHash, r
 import { home, platforms, platformDetail, tools, toolDetail } from './pages/discover.js';
 import { community, postDetail, newPost, loginPage, registerPage, mePage, userPage } from './pages/community.js';
 import { jobs, jobDetail, newJob } from './pages/jobs.js';
+import { startRealtime } from './realtime.js';
 
 /* ---------------- 外壳渲染 ---------------- */
 
@@ -192,6 +193,7 @@ bindSearch(document.getElementById('mobile-search'));
 window.addEventListener('vc:auth-changed', syncShell);
 
 syncShell();
+startRealtime();
 const current = (location.hash || '#/').slice(1);
 router.start();
 setActiveNav(current);

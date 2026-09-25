@@ -43,7 +43,7 @@ export async function community(params, query) {
       <input class="input filter-input" id="community-kw" placeholder="搜索帖子" value="${esc(keyword)}" style="margin-left:auto">
     </div>
 
-    <div class="feed">${postsData.list.length ? postsData.list.map(postCard).join('') : emptyBox('这个板块还没有内容')}</div>
+    <div class="feed" data-live="posts" data-live-query="${esc(JSON.stringify({ board, sort, type, keyword, page }))}">${postsData.list.length ? postsData.list.map(postCard).join('') : emptyBox('这个板块还没有内容')}</div>
     ${pagination(postsData.meta, '/community', { board, sort, type, keyword })}
   `);
 
@@ -74,7 +74,7 @@ export async function postDetail(params) {
 
   setContent(`
     <a class="btn btn-sm btn-ghost" href="${buildHash('/community', { board: post.board_id })}" style="margin-bottom:12px">${icon('back', 14)} 返回 ${esc(post.board_name)}</a>
-    <div class="card">
+    <div class="card" data-live="postStats" data-live-target="${esc(post.id)}">
       <h1 class="detail-title">
         ${post.pinned ? '<span class="badge-pin">置顶</span>' : ''}
         ${post.essence ? '<span class="badge-essence">精华</span>' : ''}
@@ -100,18 +100,18 @@ export async function postDetail(params) {
       ${post.tags && post.tags.length ? `<div class="post-tags" style="margin-top:12px">${post.tags.map((t) => `<span class="chip"># ${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="post-foot" style="margin-top:14px">
         <span class="act like ${post.liked ? 'on' : ''}" data-like="${esc(post.id)}">${icon('heart', 15)} 点赞 ${num(post.like_count)}</span>
-        <span>${icon('chat', 15)} ${num(post.comment_count)} 评论</span>
+        <span data-cmt="${esc(post.id)}">${icon('chat', 15)} ${num(post.comment_count)} 评论</span>
       </div>
     </div>
 
     <div style="height:14px"></div>
     <div class="card">
-      <div class="widget-title">${icon('chat', 15)} 全部评论（${comments.length}）</div>
+      <div class="widget-title">${icon('chat', 15)} 全部评论<span data-cmt-count="${esc(post.id)}">（${comments.length}）</span></div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <input class="input" id="comment-input" placeholder="友善发言，理性讨论">
         <button class="btn" id="comment-send">发送</button>
       </div>
-      <div id="comment-list">${commentList(comments)}</div>
+      <div id="comment-list" data-live="comments" data-live-type="post" data-live-target="${esc(post.id)}">${commentList(comments)}</div>
     </div>
   `);
 

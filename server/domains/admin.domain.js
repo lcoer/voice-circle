@@ -8,6 +8,7 @@ const { ok, wrap, AppError, notFound } = require('../lib/http');
 const { requireStaff, requireAdmin } = require('../lib/auth');
 const audit = require('./audit');
 const metaDomain = require('./meta.domain');
+const { publish } = require('../lib/bus');
 
 const router = express.Router();
 const { nowISO, addDays } = util;
@@ -111,6 +112,11 @@ router.post('/reports/handle', requireStaff, wrap(async (req, res) => {
     if (report.target_type === 'post') run("UPDATE posts SET status = 'removed', updated_at = ? WHERE id = ?", [nowISO(), report.target_id]);
     if (report.target_type === 'job') run("UPDATE jobs SET status = 'removed', updated_at = ? WHERE id = ?", [nowISO(), report.target_id]);
     if (report.target_type === 'comment') run("UPDATE comments SET status = 'removed' WHERE id = ?", [report.target_id]);
+    // 举报成立并下架后，其他正在浏览该内容的用户需要立刻看到它消失
+    if (['post', 'job', 'comment'].includes(report.target_type)) {
+      publish(report.target_type === 'comment' ? 'comment' : report.target_type === 'job' ? 'job' : 'post',
+        { targetType: report.target_type, targetId: report.target_id, actorId: req.user.id });
+    }
   }
   audit.log(req.user, '处理举报', report.target_type, report.target_id, `${report.reason_type} / ${action} ${note || ''}`);
   ok(res, null, '举报已处理');
@@ -118,7 +124,9 @@ router.post('/reports/handle', requireStaff, wrap(async (req, res) => {
 
 router.post('/comments/status', requireStaff, wrap(async (req, res) => {
   const { id, status } = req.body || {};
+  const row = get('SELECT target_type AS t, target_id AS tid FROM comments WHERE id = ?', [id]);
   run('UPDATE comments SET status = ? WHERE id = ?', [status === 'published' ? 'published' : 'removed', id]);
+  publish('comment', { targetType: row ? row.t : null, targetId: row ? row.tid : null, actorId: req.user.id });
   audit.log(req.user, '评论审核', 'comment', id, status);
   ok(res, null, '已更新');
 }));

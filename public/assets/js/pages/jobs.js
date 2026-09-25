@@ -2,7 +2,7 @@
 
 import { api, esc, icon, num, fromNow, fmtDate, toast, store, buildHash, requireLogin, salaryText } from '../core.js';
 import {
-  setContent, setRail, jobCard, emptyBox, loadingList, pagination, noticeWidget, rankWidget, statusChip
+  setContent, setRail, jobCard, commentItem, emptyBox, loadingList, pagination, noticeWidget, rankWidget, statusChip
 } from './components.js';
 
 let dictCache = null;
@@ -73,7 +73,7 @@ export async function jobs(params, query) {
       <input class="input filter-input" id="jb-kw" placeholder="搜索岗位 / 关键词" value="${esc(q.keyword)}" style="margin-left:auto">
     </div>
 
-    <div class="feed">
+    <div class="feed" data-live="jobs" data-live-query="${esc(JSON.stringify({ kind: q.kind, platform: q.platform, role: q.role_type, cycle: q.salary_cycle, sort: q.sort, no_risk: q.no_risk, keyword: q.keyword, page: q.page }))}">
       ${data.list.length ? data.list.map(jobCard).join('') : emptyBox('没有符合条件的岗位，试试放宽筛选')}
     </div>
     ${pagination(data.meta, '/jobs', baseQuery)}
@@ -108,7 +108,7 @@ export async function jobDetail(params) {
 
   setContent(`
     <a class="btn btn-sm btn-ghost" href="${buildHash('/jobs', { kind: job.kind })}" style="margin-bottom:12px">${icon('back', 14)} 返回列表</a>
-    <div class="card">
+    <div class="card" data-live="jobStats" data-live-target="${esc(job.id)}">
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="min-width:240px">
           <h1 class="detail-title" style="margin:0 0 8px">${esc(job.title)}</h1>
@@ -172,19 +172,12 @@ export async function jobDetail(params) {
 
     <div style="height:14px"></div>
     <div class="card">
-      <div class="widget-title">${icon('chat', 15)} 留言 / 咨询（${comments.length}）</div>
+      <div class="widget-title">${icon('chat', 15)} 留言 / 咨询<span data-cmt-count="${esc(job.id)}">（${comments.length}）</span></div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <input class="input" id="job-comment-input" placeholder="询问排班、结算等细节，注意保护个人隐私">
         <button class="btn" id="job-comment-send">发送</button>
       </div>
-      <div id="job-comment-list">${comments.length ? comments.map((c) => `
-        <div class="comment-item">
-          <div class="avatar avatar-sm">${esc(c.author_avatar || (c.author_nick || 'U').slice(0, 1))}</div>
-          <div class="comment-body">
-            <div class="comment-head"><strong style="color:var(--text)">${esc(c.author_nick)}</strong><span>${fromNow(c.created_at)}</span></div>
-            <div class="comment-text">${esc(c.content)}</div>
-          </div>
-        </div>`).join('') : emptyBox('还没有留言')}</div>
+      <div id="job-comment-list" data-live="comments" data-live-type="job" data-live-target="${esc(job.id)}">${comments.length ? comments.map((c) => commentItem(c)).join('') : emptyBox('还没有留言')}</div>
     </div>
   `);
 

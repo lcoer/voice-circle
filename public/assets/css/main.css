@@ -443,3 +443,41 @@ select.select { appearance: none; background-image: none; }
   .layout { padding: 10px 10px 90px; }
   .card { padding: 14px; }
 }
+
+/* ---------------- 实时更新：新内容提示胶囊 / 高亮 ---------------- */
+
+.live-pill {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  z-index: 80;
+  transform: translate(-50%, -10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease, transform .22s ease;
+}
+.live-pill.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+.live-pill-btn {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(135deg, var(--brand), var(--pink));
+  box-shadow: 0 10px 26px rgba(124, 92, 255, .38);
+}
+.live-pill-btn:hover { filter: brightness(1.08); }
+
+.live-new { animation: live-in .45s ease both; }
+@keyframes live-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 860px) {
+  .live-pill { top: 68px; }
+}

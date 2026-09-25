@@ -55,7 +55,7 @@ export function postCard(post) {
     ${post.tags && post.tags.length ? `<div class="post-tags">${post.tags.map((t) => `<span class="chip"># ${esc(t)}</span>`).join('')}</div>` : ''}
     <div class="post-foot">
       <span class="act like ${post.liked ? 'on' : ''}" data-like="${esc(post.id)}">${icon('heart', 15)} ${num(post.like_count)}</span>
-      <span class="act" data-goto="#/post/${esc(post.id)}">${icon('chat', 15)} ${num(post.comment_count)}</span>
+      <span class="act" data-goto="#/post/${esc(post.id)}" data-cmt="${esc(post.id)}">${icon('chat', 15)} ${num(post.comment_count)}</span>
       <span class="act fav ${post.faved ? 'on' : ''}" data-fav="post:${esc(post.id)}">${icon('star', 15)} ${num(post.fav_count)}</span>
       <span style="margin-left:auto">${icon('eye', 14)} ${num(post.views)}</span>
     </div>
@@ -139,16 +139,20 @@ export function noticeWidget(title, text) {
   return `<div class="card"><div class="widget-title">${icon('shield', 15)} ${esc(title)}</div><div class="notice">${esc(text)}</div></div>`;
 }
 
-export function commentList(comments) {
-  if (!comments.length) return emptyBox('还没有评论，来说两句');
-  return comments.map((c) => `
-    <div class="comment-item">
+export function commentItem(c, isNew = false) {
+  return `
+    <div class="comment-item${isNew ? ' live-new' : ''}" data-comment="${esc(c.id)}">
       <div class="avatar avatar-sm">${esc(c.author_avatar || (c.author_nick || 'U').slice(0, 1))}</div>
       <div class="comment-body">
         <div class="comment-head"><strong style="color:var(--text)">${esc(c.author_nick)}</strong><span>${fromNow(c.created_at)}</span></div>
         <div class="comment-text">${esc(c.content)}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+}
+
+export function commentList(comments) {
+  if (!comments.length) return emptyBox('还没有评论，来说两句');
+  return comments.map((c) => commentItem(c)).join('');
 }
 
 export function pagination(meta, basePath, query) {

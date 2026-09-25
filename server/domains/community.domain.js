@@ -12,6 +12,7 @@ const { ok, wrap, AppError, notFound, forbidden } = require('../lib/http');
 const { requireAuth, requireStaff } = require('../lib/auth');
 const risk = require('../lib/risk');
 const audit = require('./audit');
+const { publish } = require('../lib/bus');
 
 const router = express.Router();
 const { uid, nowISO, stringifyJSON, textToSafeHTML, clampInt } = util;
@@ -163,12 +164,17 @@ router.post('/', requireAuth, wrap(async (req, res) => {
   const message = result.status === 'pending'
     ? '发布成功，内容命中风控词已进入人工审核队列'
     : '发布成功';
+  // 直接上架的帖子才广播：待审核内容前台列表本就查不到，推送会造成无效刷新
+  if (result.status === 'published') {
+    publish('post', { targetType: 'post', targetId: result.id, actorId: req.user.id });
+  }
   ok(res, result, message);
 }));
 
 router.delete('/:id', requireAuth, wrap(async (req, res) => {
   const force = ['admin', 'moderator'].includes(req.user.role);
   repo.remove(req.params.id, req.user.id, force);
+  publish('post', { targetType: 'post', targetId: req.params.id, actorId: req.user.id });
   ok(res, null, '帖子已删除');
 }));
 
@@ -177,6 +183,7 @@ router.post('/admin/status', requireStaff, wrap(async (req, res) => {
   if (!['published', 'rejected', 'removed', 'pending'].includes(status)) throw new AppError('状态值不合法');
   run('UPDATE posts SET status = ?, reject_reason = ?, updated_at = ? WHERE id = ?', [status, reason || '', nowISO(), id]);
   audit.log(req.user, '帖子审核', 'post', id, `${status} ${reason || ''}`);
+  publish('post', { targetType: 'post', targetId: id, actorId: req.user.id });
   ok(res, null, '状态已更新');
 }));
 
@@ -185,6 +192,7 @@ router.post('/admin/flag', requireStaff, wrap(async (req, res) => {
   if (!['pinned', 'essence'].includes(field)) throw new AppError('不支持的操作');
   run(`UPDATE posts SET ${field} = ?, updated_at = ? WHERE id = ?`, [value ? 1 : 0, nowISO(), id]);
   audit.log(req.user, field === 'pinned' ? '帖子置顶' : '帖子加精', 'post', id, String(!!value));
+  publish('post', { targetType: 'post', targetId: id, actorId: req.user.id });
   ok(res, null, '已更新');
 }));
 

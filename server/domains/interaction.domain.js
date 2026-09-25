@@ -8,6 +8,7 @@ const { likeCount, favCount, commentCount, myReaction } = require('./helpers');
 const { ok, wrap, AppError, notFound } = require('../lib/http');
 const { requireAuth } = require('../lib/auth');
 const risk = require('../lib/risk');
+const { publish } = require('../lib/bus');
 
 const router = express.Router();
 const { uid, nowISO, plainText } = util;
@@ -50,6 +51,9 @@ router.post('/comments', requireAuth, wrap(async (req, res) => {
     `SELECT c.*, u.nick AS author_nick, u.avatar AS author_avatar FROM comments c JOIN users u ON u.id = c.author_id WHERE c.id = ?`,
     [id]
   );
+  if (row.status === 'published') {
+    publish('comment', { targetType, targetId, actorId: req.user.id });
+  }
   ok(res, row, scan.level === 'high' ? '评论已进入审核' : '评论已发布');
 }));
 
@@ -59,7 +63,10 @@ router.delete('/comments/:id', requireAuth, wrap(async (req, res) => {
   if (row.author_id !== req.user.id && !['admin', 'moderator'].includes(req.user.role)) {
     throw new AppError('只能删除自己的评论', 403);
   }
+  const target = get('SELECT target_type AS t, target_id AS id FROM comments WHERE id = ?', [req.params.id]);
   run("UPDATE comments SET status = 'removed' WHERE id = ?", [req.params.id]);
+  // 目标列表的评论数会减少，广播让详情页/列表数字实时同步
+  publish('comment', { targetType: target ? target.t : null, targetId: target ? target.id : null, actorId: req.user.id });
   ok(res, null, '评论已删除');
 }));
 
@@ -79,6 +86,8 @@ router.post('/reaction', requireAuth, wrap(async (req, res) => {
       [uid('r'), req.user.id, targetType, targetId, type, nowISO()]);
     active = 1;
   }
+  // 赞藏只影响计数（也有可能改变"热门"排序），广播后前台按需刷新列表数字
+  publish('reaction', { targetType, targetId, actorId: req.user.id });
   ok(res, {
     active,
     like_count: likeCount(targetType, targetId),

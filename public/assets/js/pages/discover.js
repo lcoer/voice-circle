@@ -30,6 +30,7 @@ export async function home(params, query) {
   ];
 
   setContent(`
+   <div data-live="home">
     <div class="card" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
       <div>
         <div class="section-title" style="margin-bottom:4px">今天找个靠谱的厅，或者招到靠谱的人</div>
@@ -68,6 +69,7 @@ export async function home(params, query) {
           <div class="section-sub">${fromNow(j.created_at)}</div>
         </a>`).join('')}
     </div>
+   </div>
   `);
 
   setRail(`

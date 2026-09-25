@@ -76,22 +76,24 @@ voice-circle/
 │  ├─ boot.js              启动引导（自动补 --experimental-sqlite / --seed 重置）
 │  ├─ app.js               Express 装配：中间件 → 领域路由 → 静态资源 → 错误收敛
 │  ├─ config.js            端口 / 路径 / 会话有效期等配置
-│  ├─ lib/                 http(统一响应) auth(密码/会话/角色) risk(风控词) util
+│  ├─ lib/                 http(统一响应) auth(密码/会话/角色) risk(风控词) bus(变更事件) util
 │  ├─ data/
 │  │  ├─ db.js             SQLite 连接 + 自动建表 + 空库自动灌种子
 │  │  ├─ schema.sql        全部表结构
 │  │  └─ seed.js           演示数据（真实平台名 + 示例标注）
 │  └─ domains/             领域模块：仓储层 → 服务逻辑 → 路由（单文件内自上而下）
-│     auth / platform / tool / community / job / interaction / admin / meta / audit
+│     auth / platform / tool / community / job / interaction / admin / meta / audit / stream
 ├─ public/
 │  ├─ index.html / admin.html
 │  ├─ assets/css/main.css  暗色 + 霓虹强调主题，PC 三栏 / 移动底部 Tab
 │  ├─ assets/js/core.js    api 封装、路由、UI 组件、内联 SVG 图标
+│  ├─ assets/js/realtime.js 实时层：SSE 优先 + 轮询兜底，列表/评论增量刷新
 │  ├─ assets/js/pages/     discover(首页/平台/工具) community community jobs components
 │  └─ assets/js/admin.js   后台全部页面
 └─ test/
-   ├─ smoke.js             后端 42 项端到端断言（npm run smoke）
-   └─ ui-smoke.js          Playwright 前端页面冒烟 + 截图（npm run ui-smoke）
+   ├─ smoke.js             后端 49 项端到端断言（npm run smoke）
+   ├─ ui-smoke.js          Playwright 前端页面冒烟 + 截图（npm run ui-smoke）
+   └─ live-smoke.js        双浏览器上下文验证实时更新（npm run live-smoke）
 ```
 
 **扩展性设计**：所有 SQL 收敛在各领域仓储层，更换 MySQL/PostgreSQL 只需替换 `data/db.js` 的驱动与占位符方言；新增业务领域只需新增一个 `domains/*.js` 并在 `app.js` 挂载一行。
@@ -111,14 +113,25 @@ voice-circle/
 | 招聘 | `GET /api/jobs` `GET /api/jobs/:id` `POST /api/jobs` `POST /api/jobs/:id/renew|close` `POST /api/jobs/admin/status` |
 | 后台 | `GET /api/admin/overview|pending|reports|users|logs` `POST /api/admin/reports/handle` `POST /api/admin/users/save` `POST /api/admin/comments/status` |
 | 字典 | `GET /api/meta/options` `GET/POST/PUT/DELETE /api/meta/boards` |
+| 实时 | `GET /api/updates`（版本号快照，轮询兜底） `GET /api/stream`（SSE 推送 change 事件） |
 
 ---
 
 ## 五、质量保障
 
-- `npm run smoke`：42 项端到端断言，覆盖注册登录、发帖评论点赞收藏、招聘发布→审核→上架、风控标记、举报处理、到期下架、后台 CRUD、日志留痕、首页聚合等核心链路。
+- `npm run smoke`：49 项端到端断言，覆盖注册登录、发帖评论点赞收藏、招聘发布→审核→上架、风控标记、举报处理、到期下架、后台 CRUD、日志留痕、首页聚合、实时版本号与 SSE 推送等核心链路。
 - `npm run ui-smoke`：Playwright 逐路由加载 PC / 移动端 / 后台共 19 个页面，捕获控制台错误与未捕获异常（当前 0 错误），截图输出至 `test/shots/`。
+- `npm run live-smoke`：开两个浏览器上下文，A 停在列表/详情页，B 登录发帖与评论，验证 A 无需手动刷新即可看到新内容（需先 `npm i -D playwright && npx playwright install chromium`，本地服务需已在 5173 运行）。
 - 安全基线：密码 scrypt 加盐、会话过期、角色中间件、富文本入库前转义、举报与审计日志。
+
+### 实时更新是怎么做的
+
+别人发了新帖 / 新评论 / 新岗位，你这边不用刷新就能看到：
+
+1. **服务端打版本号**：`server/lib/bus.js` 维护全局 `revision` 与 `post / job / comment / reaction` 四类版本号，发帖、评论、点赞收藏、岗位发布、审核、举报下架等写操作都会 `publish()`。
+2. **两条通道自动择优**：`GET /api/stream` 是 SSE 长连接（15 秒心跳、`X-Accel-Buffering: no` 防反代缓冲），收到 `hello` 首帧即认定为可用；托管环境的反向代理可能缓冲长连接，此时自动降级到轮询 `GET /api/updates`（12 秒一次，页面切到后台时暂停，切回来立刻补一次）。
+3. **不打扰式的 UI**：列表页在顶部附近才直接插入新卡片（带 `live-new` 高亮），正在往下翻时用顶部胶囊提示「N 条新帖 · 查看」，点了才滚动上去；详情页的评论区是增量追加，正文和输入框都不会被重置。
+4. **自己的操作不回推**：事件带 `actorId`，SSE 连接携带登录态时会跳过本人触发的事件，避免本地已渲染的内容重复插入。
 
 ## 六、提交到 GitHub
 

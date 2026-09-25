@@ -13,6 +13,7 @@ const { requireAuth, requireStaff } = require('../lib/auth');
 const risk = require('../lib/risk');
 const config = require('../config');
 const audit = require('./audit');
+const { publish } = require('../lib/bus');
 
 const router = express.Router();
 const { uid, nowISO, addDays, textToSafeHTML, clampInt } = util;
@@ -150,18 +151,24 @@ router.post('/', requireAuth, wrap(async (req, res) => {
   // 收费类岗位由 jobRiskFlags 统一打标记：列表与详情页强展示红色风险横幅并降低曝光权重
   const staff = ['admin', 'moderator'].includes(req.user.role);
   const result = repo.create({ ...b, title: b.title.trim(), auto_approve: staff }, req.user.id);
-  ok(res, result, '发布成功，已进入审核队列，通过后自动上架');
+  // 管理员/审核员发布即上架才广播；其余都进审核队列，前台列表查不到
+  if (result.status === 'approved') {
+    publish('job', { targetType: 'job', targetId: result.id, actorId: req.user.id });
+  }
+  ok(res, result, staff ? '发布成功' : '发布成功，已进入审核队列，通过后自动上架');
 }));
 
 router.post('/:id/renew', requireAuth, wrap(async (req, res) => {
   const force = ['admin', 'moderator'].includes(req.user.role);
   const data = repo.renew(req.params.id, req.user.id, force);
+  publish('job', { targetType: 'job', targetId: req.params.id, actorId: req.user.id });
   ok(res, data, '已续期 30 天');
 }));
 
 router.post('/:id/close', requireAuth, wrap(async (req, res) => {
   const force = ['admin', 'moderator'].includes(req.user.role);
   repo.close(req.params.id, req.user.id, force);
+  publish('job', { targetType: 'job', targetId: req.params.id, actorId: req.user.id });
   ok(res, null, '已下架');
 }));
 
@@ -170,6 +177,7 @@ router.post('/admin/status', requireStaff, wrap(async (req, res) => {
   if (!['approved', 'rejected', 'removed', 'pending'].includes(status)) throw new AppError('状态值不合法');
   run('UPDATE jobs SET status = ?, reject_reason = ?, updated_at = ? WHERE id = ?', [status, reason || '', nowISO(), id]);
   audit.log(req.user, '招聘审核', 'job', id, `${status} ${reason || ''}`);
+  publish('job', { targetType: 'job', targetId: id, actorId: req.user.id });
   ok(res, null, '审核结果已保存');
 }));
 

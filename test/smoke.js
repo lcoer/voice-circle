@@ -23,6 +23,43 @@ function check(name, cond, extra = '') {
   else { failed += 1; console.log(`  FAIL  ${name} ${extra}`); }
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** 读取 SSE 流，按帧收集事件；到时自动断开 */
+function streamProbe(token = null, waitMs = 2000) {
+  const events = [];
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), waitMs);
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const ready = fetch(`${BASE}/stream`, { headers, signal: controller.signal })
+    .then((res) => {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      const pump = () => reader.read().then(({ done, value }) => {
+        if (done) { clearTimeout(timer); return events; }
+        buf += decoder.decode(value, { stream: true });
+        let idx = buf.indexOf('\n\n');
+        while (idx >= 0) {
+          const frame = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          const name = (frame.match(/^event:\s*(.+)$/m) || [])[1];
+          const dataLine = (frame.match(/^data:\s*(.+)$/m) || [])[1];
+          if (name) {
+            let data = null;
+            if (dataLine) { try { data = JSON.parse(dataLine); } catch (_) { data = null; } }
+            events.push({ name, data });
+          }
+          idx = buf.indexOf('\n\n');
+        }
+        return pump();
+      }).catch(() => { clearTimeout(timer); return events; });
+      return pump();
+    })
+    .catch(() => events);
+  return { events, ready };
+}
+
 async function api(pathname, options = {}, token = null) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -181,6 +218,40 @@ async function main() {
   check('首页信息流返回', home.json.data.feed.length > 0);
   check('首页岗位速览返回', home.json.data.jobs.length > 0);
   check('首页工具推荐返回', home.json.data.tools.length > 0);
+
+  console.log('\n[12] 实时通道：别人发帖即时可见');
+  const baseSnap = await api('/updates');
+  check('版本号快照覆盖四类资源',
+    ['post', 'job', 'comment', 'reaction'].every((k) => typeof baseSnap.json.data.types[k] === 'number'));
+  check('无变更时版本号不变', (await api('/updates')).json.data.revision === baseSnap.json.data.revision);
+
+  const anonProbe = streamProbe(null, 3000);
+  await sleep(300);
+  check('SSE 握手成功并收到首帧快照', anonProbe.events.some((e) => e.name === 'hello'));
+
+  await api('/posts', {
+    method: 'POST',
+    body: JSON.stringify({
+      boardId: boards[0].id, title: '冒烟测试帖：实时通道验证', content: '用于验证他人发帖是否会实时推送到已打开的页面。',
+      type: 'normal', tags: []
+    })
+  }, userToken);
+  await sleep(400);
+  check('他人发帖后 SSE 推送 change(post)',
+    anonProbe.events.some((e) => e.name === 'change' && e.data && e.data.type === 'post'));
+  const afterSnap = await api('/updates');
+  check('发帖后 post 版本号递增', afterSnap.json.data.types.post > baseSnap.json.data.types.post);
+  check('发帖后全局版本号递增', afterSnap.json.data.revision > baseSnap.json.data.revision);
+
+  const selfProbe = streamProbe(userToken, 2200);
+  await sleep(300);
+  await api('/interaction/comments', {
+    method: 'POST', body: JSON.stringify({ target_type: 'post', target_id: postId, content: '自己的评论不应回推' })
+  }, userToken);
+  await sleep(500);
+  check('自己的操作不回推给自己（避免重复插入）', !selfProbe.events.some((e) => e.name === 'change'));
+  await anonProbe.ready;
+  await selfProbe.ready;
 
   console.log(`\n=== 结果：${passed} 项通过，${failed} 项失败 ===\n`);
   server.close();

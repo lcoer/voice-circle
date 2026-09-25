@@ -20,6 +20,9 @@ function createApp() {
 
   app.get('/api/health', (_req, res) => ok(res, { time: nowISO() }, '声圈服务运行中'));
 
+  // 实时通道（/api/updates 轮询 + /api/stream SSE），需排在 attachUser 之后以便过滤自身操作
+  app.use('/api', require('./domains/stream.domain').router);
+
   app.use('/api/auth', require('./domains/auth.domain').router);
   app.use('/api/meta', require('./domains/meta.domain').router);
   app.use('/api/platforms', require('./domains/platform.domain').router);
