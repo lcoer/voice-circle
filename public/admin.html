@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>声圈管理后台</title>
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23ff4d9d'/><text y='68' x='50' text-anchor='middle' font-size='52' fill='white'>管</text></svg>">
+<style>
+  .admin-wrap { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; max-width: 1400px; margin: 0 auto; padding: 18px 20px 40px; }
+  .admin-side { position: sticky; top: 76px; display: grid; gap: 4px; align-content: start; }
+  .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table th { text-align: left; color: var(--text-3); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--line-strong); }
+  .table td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .table tr:hover td { background: var(--surface-2); }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; }
+  .stat-value { font-size: 24px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--text-3); }
+  .queue-item { border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 10px; background: var(--surface); }
+  @media (max-width: 900px) {
+    .admin-wrap { grid-template-columns: minmax(0, 1fr); padding: 14px 12px 40px; }
+    .admin-side { display: grid; grid-auto-flow: column; overflow-x: auto; position: static; gap: 6px; padding-bottom: 4px; }
+    .admin-side .sidenav-group { display: none; }
+    .table-wrap { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/">
+      <div class="logo-box" style="background:linear-gradient(135deg,var(--pink),var(--brand))">管</div>
+      <div>
+        <div class="brand-name">声圈管理后台</div>
+        <div class="brand-sub">VOICE CIRCLE ADMIN</div>
+      </div>
+    </a>
+    <div class="topbar-actions" id="admin-topbar-user"></div>
+  </div>
+</header>
+
+<div class="admin-wrap">
+  <aside class="admin-side" id="admin-side">
+    <a class="sidenav-item" href="#/overview" data-nav="/overview">概览看板</a>
+    <a class="sidenav-item" href="#/pending" data-nav="/pending">审核队列</a>
+    <a class="sidenav-item" href="#/reports" data-nav="/reports">举报处理</a>
+    <div class="sidenav-group">内容管理</div>
+    <a class="sidenav-item" href="#/platforms" data-nav="/platforms">平台资料库</a>
+    <a class="sidenav-item" href="#/tools" data-nav="/tools">行业工具包</a>
+    <a class="sidenav-item" href="#/boards" data-nav="/boards">板块管理</a>
+    <div class="sidenav-group">系统</div>
+    <a class="sidenav-item" href="#/users" data-nav="/users">用户管理</a>
+    <a class="sidenav-item" href="#/logs" data-nav="/logs">操作日志</a>
+  </aside>
+  <main id="admin-app">
+    <div class="skeleton" style="height:100px"></div>
+  </main>
+</div>
+
+<script type="module" src="/assets/js/admin.js"></script>
+</body>
+</html>

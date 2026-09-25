@@ -1,0 +1,21 @@
+{
+  "name": "voice-circle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "声圈 VoiceCircle - 面向语音厅行业的垂直社区论坛（平台资料库 / 行业工具包 / 社区交流 / 招聘求职 + 管理后台）",
+  "main": "server/boot.js",
+  "scripts": {
+    "start": "node server/boot.js",
+    "dev": "node server/boot.js",
+    "seed": "node server/boot.js --seed",
+    "reset": "node server/boot.js --seed",
+    "smoke": "node --experimental-sqlite test/smoke.js",
+    "ui-smoke": "node --experimental-sqlite test/ui-smoke.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
