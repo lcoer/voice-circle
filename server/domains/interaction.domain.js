@@ -10,7 +10,7 @@ const { requireAuth } = require('../lib/auth');
 const risk = require('../lib/risk');
 
 const router = express.Router();
-const { uid, nowISO, textToSafeHTML } = util;
+const { uid, nowISO, plainText } = util;
 
 function targetExists(targetType, targetId) {
   if (targetType === 'post') return !!get('SELECT id FROM posts WHERE id = ?', [targetId]);
@@ -43,7 +43,7 @@ router.post('/comments', requireAuth, wrap(async (req, res) => {
   run(
     `INSERT INTO comments (id, target_type, target_id, parent_id, author_id, content, status, created_at)
      VALUES (?,?,?,?,?,?,?,?)`,
-    [id, targetType, targetId, null, req.user.id, textToSafeHTML(content),
+    [id, targetType, targetId, null, req.user.id, plainText(content),
       scan.level === 'high' ? 'pending' : 'published', nowISO()]
   );
   const row = get(

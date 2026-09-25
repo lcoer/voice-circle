@@ -41,6 +41,17 @@ function init() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.exec(schema);
 
+  // 历史数据清洗：早期版本把评论内容也套了段落标签，会被前端转义后原样显示成 <p>…</p>
+  // 注意 SQLite 的 TRIM(x) 默认只去空格，换行需显式指定字符集
+  const dirty = get("SELECT COUNT(*) AS count FROM comments WHERE content LIKE '%<p>%' OR content LIKE '%<br>%'");
+  if (Number(dirty.count) > 0) {
+    run("UPDATE comments SET content = TRIM(REPLACE(REPLACE(REPLACE(content, '<p>', ''), '</p>', CHAR(10)), '<br>', CHAR(10)), CHAR(10) || CHAR(13) || ' ')" +
+        " WHERE content LIKE '%<p>%' OR content LIKE '%<br>%'");
+    console.log(`[db] 已清洗 ${dirty.count} 条历史评论的段落标签`);
+  }
+  // 兜底：去掉评论首尾残留的空白与换行
+  run("UPDATE comments SET content = TRIM(content, CHAR(10) || CHAR(13) || ' ') WHERE content <> TRIM(content, CHAR(10) || CHAR(13) || ' ')");
+
   const { count } = get('SELECT COUNT(*) AS count FROM users');
   if (Number(count) === 0) {
     console.log('[db] 检测到空库，正在写入演示种子数据…');

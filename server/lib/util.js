@@ -87,6 +87,21 @@ function textToSafeHTML(text) {
     .join('');
 }
 
+/**
+ * 纯文本字段（评论、简介等）：去掉任何 HTML 标签，只保留文字。
+ * 供「前端会再做一次转义渲染」的字段使用——若也套 textToSafeHTML，
+ * 转义后会把 <p> 当普通字符显示出来，正是之前评论出现 <p> 的原因。
+ */
+function plainText(text) {
+  return String(text ?? '')
+    .replace(/\r\n/g, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function excerpt(text, len = 90) {
   const plain = String(text ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   return plain.length > len ? `${plain.slice(0, len)}…` : plain;
@@ -100,5 +115,5 @@ function clampInt(value, def, min, max) {
 
 module.exports = {
   uid, token, nowISO, addDays, isExpired, fmtDate, fromNow, daysLeft,
-  parseJSON, stringifyJSON, escapeHTML, textToSafeHTML, excerpt, clampInt
+  parseJSON, stringifyJSON, escapeHTML, textToSafeHTML, plainText, excerpt, clampInt
 };
