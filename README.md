@@ -120,7 +120,20 @@ voice-circle/
 - `npm run ui-smoke`：Playwright 逐路由加载 PC / 移动端 / 后台共 19 个页面，捕获控制台错误与未捕获异常（当前 0 错误），截图输出至 `test/shots/`。
 - 安全基线：密码 scrypt 加盐、会话过期、角色中间件、富文本入库前转义、举报与审计日志。
 
-## 六、已知边界（演示范围）
+## 六、提交到 GitHub
+
+仓库地址：https://github.com/lcoer/voice-circle
+
+```bash
+npm run push                 # 自动根据改动文件生成提交信息并提交推送
+npm run push -- "修复登录跳转" # 自定义提交信息
+npm run push -- --dry        # 只预览改动，不提交不推送
+```
+
+脚本为 `scripts/push.js`，流程是 `git add -A` → 生成/使用提交信息 → `git commit` → **`git push` 带 8 次重试**。
+加重试的原因：本机沙箱环境下 `git push` 到 github.com 会间歇性遇到代理 502，单次成功率约 1/3，重试即可通过（不是仓库或凭据问题）。
+
+## 七、已知边界（演示范围）
 
 - 图片上传为本地磁盘存储（base64 → `public/uploads/`），生产环境应替换为对象存储。
 - 未实现邮件/短信验证码与图形验证码；风控词表为示例级。

@@ -10,7 +10,9 @@
     "seed": "node server/boot.js --seed",
     "reset": "node server/boot.js --seed",
     "smoke": "node --experimental-sqlite test/smoke.js",
-    "ui-smoke": "node --experimental-sqlite test/ui-smoke.js"
+    "ui-smoke": "node --experimental-sqlite test/ui-smoke.js",
+    "push": "node scripts/push.js",
+    "sync": "node scripts/push.js"
   },
   "engines": {
     "node": ">=22"
