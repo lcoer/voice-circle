@@ -1,6 +1,6 @@
 // 跨页面复用的卡片与挂件组件（只被页面引用，不反向依赖页面）
 
-import { esc, icon, num, fromNow, fmtDate, salaryText } from '../core.js';
+import { esc, icon, num, fromNow, fmtDate, salaryText } from '../core.js?v=2';
 
 export function setContent(html) {
   const app = document.getElementById('app');

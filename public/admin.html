@@ -59,6 +59,18 @@
   </main>
 </div>
 
-<script type="module" src="/assets/js/admin.js"></script>
+<script type="module" src="/assets/js/admin.js?v=2"></script>
+<script>
+(function () {
+  var KEY = 'vc_admin_boot_retry';
+  setTimeout(function () {
+    var app = document.getElementById('admin-app');
+    if (app && app.children.length) return;
+    if (sessionStorage.getItem(KEY)) return;
+    sessionStorage.setItem(KEY, '1');
+    location.replace(location.pathname + '?_t=' + Date.now() + location.hash);
+  }, 4000);
+})();
+</script>
 </body>
 </html>

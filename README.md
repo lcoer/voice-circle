@@ -175,6 +175,17 @@ npm run push -- --dry        # 只预览改动，不提交不推送
 2. 本地 `npm run reset` 之前，确认备份已保存。
 3. 更新代码后再发布；若线上数据被覆盖，用备份文件覆盖回去即可恢复。
 
+### 静态资源缓存：发新版前先 bump 版本号（重要）
+
+托管平台前置 CDN 会缓存静态资源。重新发布后可能出现「新的 `app.js` + 旧的 `components.js`」混着返回，
+浏览器直接报 `does not provide an export named 'xxx'` 并白屏。
+
+- 前端所有相对 import 与入口 `<script src>` 都带版本后缀：`./components.js?v=2`。
+- 改完前端后发布前运行 `npm run bump-assets`（脚本在 `scripts/bump-asset-version.js`，可传版本号），
+  URL 变化即可让所有 CDN 节点回源。
+- 服务端已对静态资源与 HTML 下发 `Cache-Control: no-store`；`index.html` / `admin.html` 还带 4 秒兜底重试（一次），
+  即使偶尔命中脏缓存也能自愈。
+
 ### 想要真正的长期持久化
 
 SQLite 在沙箱内适合演示和小范围内测。如果要长期运营、保证容器重启也不丢数据，需要把数据层换成云数据库（仓储层已隔离，改造范围可控）。

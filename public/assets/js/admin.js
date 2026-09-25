@@ -1,6 +1,6 @@
 // 声圈管理后台：概览 / 审核 / 举报 / 平台 / 工具 / 板块 / 用户 / 日志
 
-import { api, store, router, setActiveNav, icon, esc, toast, modal, fmtDate, num, requireLogin } from './core.js';
+import { api, store, router, setActiveNav, icon, esc, toast, modal, fmtDate, num, requireLogin } from './core.js?v=2';
 
 function setContent(html) {
   document.getElementById('admin-app').innerHTML = html;

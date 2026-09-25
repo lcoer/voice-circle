@@ -67,6 +67,20 @@
   </div>
 </nav>
 
-<script type="module" src="/assets/js/app.js"></script>
+<script type="module" src="/assets/js/app.js?v=2"></script>
+<script>
+// 兜底：托管平台 CDN 可能同时缓存了新版 app.js 与旧版 components.js，
+// 造成 ESM 导出缺失、整页白屏。检测到 4 秒内未渲染时，带时间戳强刷一次。
+(function () {
+  var KEY = 'vc_boot_retry';
+  setTimeout(function () {
+    var app = document.getElementById('app');
+    if (app && app.children.length) return;
+    if (sessionStorage.getItem(KEY)) return;
+    sessionStorage.setItem(KEY, '1');
+    location.replace(location.pathname + '?_t=' + Date.now() + location.hash);
+  }, 4000);
+})();
+</script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 // 声圈前台实时层：别人发的新帖 / 新评论 / 新岗位无需手动刷新即可出现在页面上
 // 通道策略：SSE（/api/stream）优先，托管反代可能缓冲长连接 → 自动降级为 /api/updates 轮询
 
-import { api, num } from './core.js';
-import { postCard, jobCard, commentItem } from './pages/components.js';
+import { api, num } from './core.js?v=2';
+import { postCard, jobCard, commentItem } from './pages/components.js?v=2';
 
 const POLL_MS = 12000;
 

@@ -1,10 +1,10 @@
 // 声圈前台入口：装配外壳（导航/用户区）→ 注册路由 → 全局交互委托
 
-import { api, store, router, setActiveNav, icon, esc, toast, modal, buildHash, requireLogin } from './core.js';
-import { home, platforms, platformDetail, tools, toolDetail } from './pages/discover.js';
-import { community, postDetail, newPost, loginPage, registerPage, mePage, userPage } from './pages/community.js';
-import { jobs, jobDetail, newJob } from './pages/jobs.js';
-import { startRealtime } from './realtime.js';
+import { api, store, router, setActiveNav, icon, esc, toast, modal, buildHash, requireLogin } from './core.js?v=2';
+import { home, platforms, platformDetail, tools, toolDetail } from './pages/discover.js?v=2';
+import { community, postDetail, newPost, loginPage, registerPage, mePage, userPage } from './pages/community.js?v=2';
+import { jobs, jobDetail, newJob } from './pages/jobs.js?v=2';
+import { startRealtime } from './realtime.js?v=2';
 
 /* ---------------- 外壳渲染 ---------------- */
 

@@ -1,10 +1,10 @@
 // 首页 / 平台资料库 / 行业工具包 三个 browsing 类页面
 
-import { api, esc, icon, num, fromNow, fmtDate, toast, store, buildHash, requireLogin } from '../core.js';
+import { api, esc, icon, num, fromNow, fmtDate, toast, store, buildHash, requireLogin } from '../core.js?v=2';
 import {
   setContent, setRail, postCard, platformCard, toolCard, rankWidget, noticeWidget,
   commentList, emptyBox, loadingList, statusChip
-} from './components.js';
+} from './components.js?v=2';
 
 const TOOL_CATEGORIES = ['话术模板', '运营表格', '合同协议', '素材资源', '软件工具', '避坑指南'];
 

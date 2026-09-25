@@ -86,12 +86,21 @@ function createApp() {
     ok(res, { url: `/uploads/${name}` }, '上传成功');
   }));
 
-  app.use(express.static(config.PUBLIC_DIR, { index: false, maxAge: '1h' }));
+  // 静态资源：托管平台前置 CDN 会缓存 1h，重新发布后浏览器可能拿到
+  //「新的 app.js + 旧的 components.js」导致 ESM 导出缺失 → 一律禁用缓存，每次回源校验
+  app.use(express.static(config.PUBLIC_DIR, {
+    index: false,
+    setHeaders(res) { res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); }
+  }));
 
-  app.get('/admin', (_req, res) => res.sendFile(path.join(config.PUBLIC_DIR, 'admin.html')));
+  app.get('/admin', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(path.join(config.PUBLIC_DIR, 'admin.html'));
+  });
 
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api/')) return next(new AppError('接口不存在', 404, 'ERR_NOT_FOUND'));
+    res.setHeader('Cache-Control', 'no-store');
     res.sendFile(path.join(config.PUBLIC_DIR, 'index.html'));
   });
 

@@ -1,9 +1,9 @@
 // 招聘求职区：列表筛选、岗位详情、发布表单
 
-import { api, esc, icon, num, fromNow, fmtDate, toast, store, buildHash, requireLogin, salaryText } from '../core.js';
+import { api, esc, icon, num, fromNow, fmtDate, toast, store, buildHash, requireLogin, salaryText } from '../core.js?v=2';
 import {
   setContent, setRail, jobCard, commentItem, emptyBox, loadingList, pagination, noticeWidget, rankWidget, statusChip
-} from './components.js';
+} from './components.js?v=2';
 
 let dictCache = null;
 async function dict() {

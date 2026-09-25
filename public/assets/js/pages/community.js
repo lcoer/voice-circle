@@ -1,9 +1,9 @@
 // 社区交流区：板块列表、帖子详情、发帖、登录、个人中心、用户主页
 
-import { api, esc, icon, num, fromNow, fmtDate, toast, store, modal, buildHash, requireLogin, hashQuery } from '../core.js';
+import { api, esc, icon, num, fromNow, fmtDate, toast, store, modal, buildHash, requireLogin, hashQuery } from '../core.js?v=2';
 import {
   setContent, setRail, postCard, commentList, emptyBox, loadingList, pagination, noticeWidget, rankWidget
-} from './components.js';
+} from './components.js?v=2';
 
 /* ---------------- 板块列表 ---------------- */
 

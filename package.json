@@ -12,6 +12,7 @@
     "smoke": "node --experimental-sqlite test/smoke.js",
     "ui-smoke": "node --experimental-sqlite test/ui-smoke.js",
     "live-smoke": "node test/live-smoke.js",
+    "bump-assets": "node scripts/bump-asset-version.js",
     "push": "node scripts/push.js",
     "sync": "node scripts/push.js"
   },
