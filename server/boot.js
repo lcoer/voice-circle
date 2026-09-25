@@ -49,7 +49,8 @@ const { sweepExpired } = require('./domains/job.domain');
 const app = createApp();
 sweepExpired();
 
-const host = process.env.HOST || '127.0.0.1';
+// 线上部署（反向代理）要求绑定 0.0.0.0；本地开发仍可通过 HOST 环境变量覆盖
+const host = process.env.HOST || '0.0.0.0';
 app.listen(config.PORT, host, () => {
   console.log('');
   console.log('  声圈 VoiceCircle 已启动');
